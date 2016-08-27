@@ -1,9 +1,12 @@
 (ns steam-summary.gui
-  (:require [steam-summary.core :as core])
+  (:require [steam-summary.core :as core]
+            [clojure.java.io :as io])
   (:use seesaw.core
         seesaw.dev
         [seesaw.forms :exclude [separator]])
+  (:import (java.awt Component))
   (:gen-class))
+
 
 (native!)
 (debug!)
@@ -25,14 +28,15 @@
         b (button :text "Open" :halign :center :margin [0 25])
         content-panel (vertical-panel
                         :items
-                          [form
+                        [form
                            (doto b
-                             (.setAlignmentX java.awt.Component/CENTER_ALIGNMENT))])]
+                             (.setAlignmentX Component/CENTER_ALIGNMENT))])]
     (.. f getRootPane (setDefaultButton b))
     (-> f
         (config! :content content-panel)
         show!)))
 
+;(.format (java.text.SimpleDateFormat. "MMM d, yyyy") (java.util.Date.))
 
 
 
