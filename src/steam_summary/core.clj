@@ -5,7 +5,6 @@
            (java.util TimeZone)
            (java.net URL)))
 
-
 (def ^:private BASE_URL "http://store.steampowered.com/search/results/?sort_by=Released_DESC&category1=998&os=win")
 
 (def ^:private NAME_SELECTOR [:span.title])
@@ -68,7 +67,7 @@
     (future-cancel sacrificial-future)))
     ; RIP Future 2016-2016. Your sacrifice will not be in vain!
 
-(defn open-valid-games [min-date min-price min-reviews min-score]
+(defn open-valid-games [{:keys [min-date min-price min-reviews min-score]}]
   (let [min-date (parse-date min-date DATE_FORMATS)
         games (get-games-after-date BASE_URL min-date)
         valid-games (filter (fn [{:keys [review-score review-number price]}]
