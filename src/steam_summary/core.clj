@@ -62,13 +62,7 @@
 
 ; URL - Name - Date - Reviews - Price
 
-(defn- open-in-browser [[first-url & urls]]
-  (let [sacrificial-future (future (b/browse-url first-url))]
-    (doseq [url urls] (b/browse-url url))
-    (future-cancel sacrificial-future)))
-    ; RIP Future 2016-2016. Your sacrifice will not be in vain!
-
-(defn open-valid-games [{:keys [min-date min-price min-reviews min-score]}]
+(defn get-valid-games [{:keys [min-date min-price min-reviews min-score]}]
   (let [min-date (parse-date min-date DATE_FORMATS)
         games (get-games-after-date BASE_URL min-date)
         valid-games (filter (fn [{:keys [review-score review-number price]}]
@@ -76,4 +70,11 @@
                                    (<= min-score review-score)
                                    (<= min-reviews review-number)))
                             games)]
-    (open-in-browser (map :url valid-games))))
+    valid-games))
+
+(defn open-in-browser [[first-url & urls]]
+  (when first-url
+    (let [sacrificial-future (future (b/browse-url first-url))]
+      (doseq [url urls] (b/browse-url url))
+      (future-cancel sacrificial-future))))
+    ; RIP Future 2016-2016. Your sacrifice will not be in vain!

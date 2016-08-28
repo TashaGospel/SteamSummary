@@ -51,14 +51,15 @@
 
     (listen b :action
             (fn [e]
-              (try (core/open-valid-games (get-criteria))
-                   (text! error-label "")
+              (text! error-label "")
+              (try (let [games (core/get-valid-games (get-criteria))]
+                     (if (seq games)
+                       (core/open-in-browser games)
+                       (text! error-label "No valid games")))
                    (catch ParseException e
                      (text! error-label "Invalid date format"))
                    (catch NumberFormatException e
                      (text! error-label "Invalid number format"))
-                   (catch NullPointerException e
-                     (text! error-label "Missing parameters"))
                    (catch UnknownHostException e
                      (text! error-label "Network error"))
                    (catch Exception e
