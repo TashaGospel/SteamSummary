@@ -17,7 +17,7 @@
 
 (defn- parse-date [s formats & {:keys [from-utc]}]
   (loop [[format & formats] formats]
-    (when format
+    (if format
       (if-let [res (try (.parse
                           (let [f (SimpleDateFormat. format)]
                             (if from-utc
@@ -27,7 +27,8 @@
                           s)
                         (catch ParseException e nil))]
         res
-        (recur formats)))))
+        (recur formats))
+      (throw (ParseException. "Unknown date format" 0)))))
 
 (defn- fetch-page [url page-num]
   (html/html-resource (URL. (str url "&page=" page-num))))

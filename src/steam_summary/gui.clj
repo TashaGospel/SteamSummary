@@ -4,7 +4,9 @@
   (:use seesaw.core
         seesaw.dev
         [seesaw.forms :exclude [separator]])
-  (:import (java.awt Component))
+  (:import (java.awt Component)
+           (java.text ParseException)
+           (java.net UnknownHostException))
   (:gen-class))
 
 (native!)
@@ -51,8 +53,17 @@
             (fn [e]
               (try (core/open-valid-games (get-criteria))
                    (text! error-label "")
+                   (catch ParseException e
+                     (text! error-label "Invalid date format"))
+                   (catch NumberFormatException e
+                     (text! error-label "Invalid number format"))
+                   (catch NullPointerException e
+                     (text! error-label "Missing parameters"))
+                   (catch UnknownHostException e
+                     (text! error-label "Network error"))
                    (catch Exception e
-                     (text! error-label "Invalid parameters")))))
+                     (text! error-label "Unknown error")))))
+
     (listen f :window-closed
             (fn [e]
               (spit DEFAULTS_FILE
