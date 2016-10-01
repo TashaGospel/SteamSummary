@@ -5,12 +5,13 @@
         seesaw.dev
         [seesaw.forms :exclude [separator]])
   (:import (java.awt Component)
-           (java.text ParseException)
-           (java.net UnknownHostException))
+           (java.text ParseException SimpleDateFormat)
+           (java.net UnknownHostException)
+           (java.util Date))
   (:gen-class))
 
 (native!)
-(debug!)
+;(debug!)
 
 (def DEFAULTS_FILE "default.edn")
 
@@ -38,24 +39,27 @@
                                                         :text (:min-score defaults)) 2)
                        (next-line)])
         error-label (doto (label)
-                          (.setAlignmentX Component/CENTER_ALIGNMENT))
+                      (.setAlignmentX Component/CENTER_ALIGNMENT))
         b (doto (button :text "Open" :halign :center :margin [0 25])
-                (.setAlignmentX Component/CENTER_ALIGNMENT))
+            (.setAlignmentX Component/CENTER_ALIGNMENT))
         get-criteria (fn []
-                       {:min-date (value (select form [:#date-field]))
-                        :min-price (Float. (value (select form [:#price-field])))
+                       {:min-date    (value (select form [:#date-field]))
+                        :min-price   (Float. (value (select form [:#price-field])))
                         :min-reviews (Integer. (value (select form [:#review-field])))
-                        :min-score (Integer. (value (select form [:#score-field])))})
+                        :min-score   (Integer. (value (select form [:#score-field])))})
         content-panel (vertical-panel
-                        :items [form error-label b])]
+                        :items [form error-label b])
+        opened (atom false)]
 
     (listen b :action
             (fn [e]
               (text! error-label "")
-              (try (let [games (core/get-valid-games (get-criteria))]
+              (try (let [criteria (get-criteria)
+                         games (core/get-valid-games criteria)]
                      (if (seq games)
-                       (core/open-in-browser games)
-                       (text! error-label "No valid games")))
+                       (core/open-in-browser (map :url games))
+                       (text! error-label "No valid games"))
+                     (reset! opened true))
                    (catch ParseException e
                      (text! error-label "Invalid date format"))
                    (catch NumberFormatException e
@@ -68,12 +72,13 @@
     (listen f :window-closed
             (fn [e]
               (spit DEFAULTS_FILE
-                    {:min-date (.format
-                                 (java.text.SimpleDateFormat. "MMM d, yyyy")
-                                 (java.util.Date.))
-                     :min-price (value (select form [:#price-field]))
+                    {:min-date    (if @opened
+                                    (.format
+                                      (SimpleDateFormat. "MMM d, yyyy") (Date.))
+                                    (:min-date defaults))
+                     :min-price   (value (select form [:#price-field]))
                      :min-reviews (value (select form [:#review-field]))
-                     :min-score (value (select form [:#score-field]))})))
+                     :min-score   (value (select form [:#score-field]))})))
 
     (.. f getRootPane (setDefaultButton b))
     (-> f

@@ -34,23 +34,27 @@
   (html/html-resource (URL. (str url "&page=" page-num))))
 
 (defn- parse-game-data [[url name date reviews price]]
-  (let [review-string (-> reviews :content second :attrs :data-store-tooltip)
-        review-seq (if review-string
-                     (map #(Integer. %) (re-seq #"\d+" review-string))
-                     [0 0])]
-    {:url (:href (:attrs url))
-     :name (html/text name)
-     :date (parse-date (html/text date) DATE_FORMATS :from-utc true)
-     :review-score (first review-seq)
-     :review-number (second review-seq)
-     :price (if-let [p (re-find #"\d+.?\d*" (html/text price))]
-              (Float. p)
-              0)}))
+  (if-let [date (try
+                  (parse-date (html/text date) DATE_FORMATS :from-utc true)
+                  (catch ParseException e nil))]
+    (let [review-string (-> reviews :content second :attrs :data-store-tooltip)
+          review-seq (if review-string
+                       (map #(Integer. %) (re-seq #"\d+" review-string))
+                       [0 0])]
+      {:url           (:href (:attrs url))
+       :name          (html/text name)
+       :date          date
+       :review-score  (first review-seq)
+       :review-number (second review-seq)
+       :price         (if-let [p (re-find #"\d+.?\d*" (html/text price))]
+                        (Float. p)
+                        0)})
+    nil))
 
 (defn- get-games [url page-num]
   (let [games (partition 5
                          (html/select (fetch-page url page-num) SELECTORS))]
-    (map parse-game-data games)))
+    (transduce (comp (map parse-game-data) (filter identity)) conj games)))
 
 (defn- get-games-after-date [url date]
   (loop [page-num 1 res []]
@@ -77,4 +81,6 @@
     (let [sacrificial-future (future (b/browse-url first-url))]
       (doseq [url urls] (b/browse-url url))
       (future-cancel sacrificial-future))))
-    ; RIP Future 2016-2016. Your sacrifice will not be in vain!
+; RIP Future 2016-2016. Your sacrifice will not be in vain!
+
+; TODO: Only write date after openning
