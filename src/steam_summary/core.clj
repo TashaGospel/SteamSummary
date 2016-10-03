@@ -39,7 +39,8 @@
                   (catch ParseException e nil))]
     (let [review-string (-> reviews :content second :attrs :data-store-tooltip)
           review-seq (if review-string
-                       (map #(Integer. %) (re-seq #"\d+" review-string))
+                       (map #(Integer. (apply str (remove (fn [c] (= c \,)) %)))
+                            (re-seq #"\d+,?\d*" review-string))
                        [0 0])]
       {:url           (:href (:attrs url))
        :name          (html/text name)
@@ -82,5 +83,3 @@
       (doseq [url urls] (b/browse-url url))
       (future-cancel sacrificial-future))))
 ; RIP Future 2016-2016. Your sacrifice will not be in vain!
-
-; TODO: Only write date after openning
